@@ -1,0 +1,147 @@
+---
+title: "R Notebook"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---2
+---
+
+```{r}
+library(googlesheets4)
+library(dplyr)
+library(ggplot2)
+library(ggalt)
+```
+
+**Wczytanie danych z google sheets oraz wyświetlenie danych**
+
+```{r}
+# Google Sheet key jako ciąg znaków (string)bject 'BMI_by_years' not found
+g_sheet <- "17lKNBZYUmPJJoNtaMX_tj17JhzdLlZvSmdch3wNwW3c"
+
+dtaGB <- read_sheet(g_sheet, sheet = "source")
+
+gsheet_key <- "1AV3jgvWzZTFmrKexH0WhkmlYqMcWeZay3b9fTvTtgdU"
+
+dtaV <- read_sheet(gsheet_key, sheet = "source")
+```
+
+```{r}
+dtaV
+summary(dtaV)
+```
+
+### Pierwsza tabela (dtaV):
+
+| **year** \| **sex** \| **country** \| weight_status \| BMI_value \| **height** \| **weight** \|
+
+### Druga tabela (dtaGB):
+
+| age \| **height** \| **weight** \| **sex** \| education \| **year** \| **country** \|
+
+**Powtarzające się kolumny** (z pogrubieniem):
+
+-   year
+
+<!-- -->
+
+-   sex
+
+<!-- -->
+
+-   height
+
+-   weight
+
+-   country
+
+**Usunięcie z tabeli dtaGB danych: age, education, dodanie BMi_value**
+
+```{r}
+# Klucz arkusza (czyli ID z URL-a Google Sheets)
+gsheet_key <- "17lKNBZYUmPJJoNtaMX_tj17JhzdLlZvSmdch3wNwW3c"
+
+# Wczytaj dane z arkusza (zakładka domyślna lub można podać `sheet = "nazwa zakładki"`)
+dtaGB <- read_sheet(gsheet_key)
+
+# Usuń kolumny age i education
+dtaGB <- dtaGB %>% select(-age, -education)
+
+# Podgląd
+head(dtaGB)
+```
+
+**Rozszerzenie tabeli**
+
+```{r}
+dtaGB <- dtaGB %>%
+  mutate(BMI_value = weight / (height / 100)^2)
+dtaGB
+```
+
+**Ze względu na trudności w precyzyjnym określeniu kryteriów, na podstawie których przypisano wartości w kolumnie `weight_status`, decyzja została podjęta o jej usunięciu w zbiorze danych `dtaV`.**
+
+```{r}
+dtaV <- dtaV %>%
+  select(-weight_status)
+```
+
+**Sprawdzenie czy została usunięta kolumna**
+
+```{r}
+dtaV
+```
+
+**Połączenie danych**
+
+```{r}
+combined_data <- bind_rows(dtaGB, dtaV)
+
+###View(combined_data)
+```
+
+```{r}
+# Wykres 2: Waga w zależności od wzrostu, kolory dla VA i GB
+ggplot(combined_data, aes(x = height, y = weight, color = country)) +
+  geom_point() +
+  scale_color_manual(values = c("VA" = "green", "GB" = "orange")) +
+  labs(title = "Waga w zależności od wzrostu", x = "Wzrost (cm)", y = "Waga (kg)") +
+  theme_minimal()
+
+# Wykres 3: Rozkład BMI w zależności od kraju
+ggplot(combined_data, aes(x = BMI_value, fill = country)) +
+  geom_histogram(binwidth = 1, position = "dodge") +
+  scale_fill_manual(values = c("VA" = "yellow", "GB" = "purple")) +
+  labs(title = "Rozkład BMI_value z podziałem na kraj", x = "BMI", y = "Liczba osób") +
+  theme_minimal()
+
+# Wykres 4: Zależność wagi od BMI
+ggplot(combined_data, aes(x = weight, y = BMI_value, color = country)) +
+  geom_point() +
+  scale_color_manual(values = c("VA" = "cyan", "GB" = "magenta")) +
+  labs(title = "Zależność wagi od BMI", x = "Waga (kg)", y = "BMI") +
+  theme_minimal()
+
+```
+
+Dumbell plot do zrobienia
+
+Dodatkowo do poprawy jest wzrost
+
+Przygotuj dashboard do eksploracji zbioru danych ma to być zrobione w flex dashboardzie - opis, hipoteza, treść danych
+
+Sprawdzenie wyników
+
+```{r}
+summary(combined_data)
+
+#### miej zawsze w głowie co z czym chcesz porównać
+### Zastanów się czego ci potrzeba
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
